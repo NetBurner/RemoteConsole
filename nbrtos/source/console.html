@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript">
+var ws;
+var MAX_TERMINAL_LEN = 2000;
+var bReconnect=false;
+
+function PutInTerminal(received_msg)
+{
+  var terminal = document.getElementById("terminal");
+  var autoScroll = (terminal.scrollTop == (terminal.scrollHeight - terminal.clientHeight));
+  var dataLen = received_msg.length;
+  var terminalLen = terminal.value.length;
+  // The following clause is to prevent browsers from crashing the page...
+  if ((terminalLen + dataLen) > MAX_TERMINAL_LEN) {
+    var delta = terminalLen + dataLen - MAX_TERMINAL_LEN;
+    terminal.value = terminal.value.substring(delta, terminalLen);
+  }
+  terminal.value += received_msg;
+  if (autoScroll) {
+    terminal.scrollTop = terminal.scrollHeight - terminal.clientHeight;
+  }
+}
+
+function MakeDataSocket(resource, query)
+{
+  if ("WebSocket" in window) {
+    // if ((ws==null) || (ws.readyState>WebSocket.OPEN)) {
+      // Let us open a web socket
+      host = window.location.hostname;
+      port = (window.location.port!='') ? (':'+window.location.port) : '';
+      ws = new WebSocket("ws://"+host+port+"/"+resource+"?"+query);
+
+      ws.onopen = function(){};
+      ws.onmessage = function (evt)
+      {
+        var received_msg = evt.data;
+        // var currNode;
+        // received_msg.replace("\r", "");
+        bReconnect=false; 
+        // console.log("ws:",received_msg);
+        PutInTerminal(received_msg);
+      };
+
+      ws.onclose = function(e) {
+        console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+        delete ws;
+        setTimeout(function() {
+          MakeDataSocket('stdio');
+        }, 1000);
+      };
+
+      ws.onerror = function(err) {
+        console.error('Socket encountered error: ', err.message, 'Closing socket');
+        ws.close();
+      };
+    // } else {
+      // console.log("Skipped open?");
+    // }
+  } else {
+    // The browser doesn't support WebSocket
+    alert("WebSocket NOT supported by your Browser!");
+  }
+}
+
+function closeWebSocket()
+{
+  if (ws) {
+    ws.close();
+  }
+}
+
+function clearLog()
+{
+  var terminal = document.getElementById("terminal");
+  terminal.value = "";
+}
+
+function Checksocket()
+{
+  fetch('ValidWS.json')
+  .then(res => res.json())
+  .then((out) => {
+    if(out.Valid) return;
+    if (ws) 
+    {
+      if(!bReconnect)PutInTerminal("\nRECONNECTING\n");
+      bReconnect=true;
+    }
+    MakeDataSocket('stdio');
+  }).catch(err=>console.log(err));
+}
+
+function TextInput()
+{
+  var input = document.getElementById("inputfield");
+  var data = input.value;
+  ws.send(data);
+  //PutInTerminal(data); // local echo
+  input.value = "";
+}
+
+
+window.onload = function() 
+{ 
+  MakeDataSocket('stdio');
+  var interval = setInterval(Checksocket, 5000);
+};
+</script>
+</head>
+<body>
+<div id="sse">
+   <a href="javascript:clearLog()">Clear Log</a>
+</div>
+<div id="DIV_Term">
+<textarea name="terminal" id="terminal" rows="30" cols="100" disabled ></textarea>
+</div>
+<div>
+<textarea name="inputfield" id="inputfield" rows="1" cols="100" oninput="TextInput()"></textarea>
+</div>
+</body>
+</html>
