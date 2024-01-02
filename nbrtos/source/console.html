@@ -26,38 +26,31 @@ function PutInTerminal(received_msg)
 function MakeDataSocket(resource, query)
 {
   if ("WebSocket" in window) {
-    // if ((ws==null) || (ws.readyState>WebSocket.OPEN)) {
-      // Let us open a web socket
-      host = window.location.hostname;
-      port = (window.location.port!='') ? (':'+window.location.port) : '';
-      ws = new WebSocket("ws://"+host+port+"/"+resource+"?"+query);
+    // Let us open a web socket
+    host = window.location.hostname;
+    port = (window.location.port!='') ? (':'+window.location.port) : '';
+    ws = new WebSocket("ws://"+host+port+"/"+resource+"?"+query);
 
-      ws.onopen = function(){};
-      ws.onmessage = function (evt)
-      {
-        var received_msg = evt.data;
-        // var currNode;
-        // received_msg.replace("\r", "");
-        bReconnect=false; 
-        // console.log("ws:",received_msg);
-        PutInTerminal(received_msg);
-      };
+    ws.onopen = function(){};
+    ws.onmessage = function (evt)
+    {
+      var received_msg = evt.data;
+      bReconnect=false; 
+      PutInTerminal(received_msg);
+    };
 
-      ws.onclose = function(e) {
-        console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
-        delete ws;
-        setTimeout(function() {
-          MakeDataSocket('stdio');
-        }, 1000);
-      };
+    ws.onclose = function(e) {
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+      delete ws;
+      setTimeout(function() {
+        MakeDataSocket('stdio');
+      }, 1000);
+    };
 
-      ws.onerror = function(err) {
-        console.error('Socket encountered error: ', err.message, 'Closing socket');
-        ws.close();
-      };
-    // } else {
-      // console.log("Skipped open?");
-    // }
+    ws.onerror = function(err) {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      ws.close();
+    };
   } else {
     // The browser doesn't support WebSocket
     alert("WebSocket NOT supported by your Browser!");
