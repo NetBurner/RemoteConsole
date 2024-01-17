@@ -88,15 +88,12 @@ void UserMain(void * pd)
 	// Main app loop
 	while (1)
 	{
-		while(charavail())
-		{
-			char c=getchar(); // getchar will echo each char to stdout
-			if(c=='\n') { // newline executes command and clears buffer
-				ExecuteCmdBuf(cmdBuf);
-				ClearCmdBuf(cmdBuf);
-			} else { // all other chars add to buffer
-				StoreCmdBuf(cmdBuf,c);
-			}
+		char c=getchar(); // getchar will block and also echo each char to stdout
+		if(c=='\n') { // newline executes command and clears buffer
+			ExecuteCmdBuf(cmdBuf);
+			ClearCmdBuf(cmdBuf);
+		} else { // all other chars add to buffer
+			StoreCmdBuf(cmdBuf,c);
 		}
 	}
 }
